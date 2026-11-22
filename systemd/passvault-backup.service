@@ -1,0 +1,16 @@
+[Unit]
+Description=PassVault backup to Google Drive (rclone crypt)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Template: deploy.sh renders __USER__ to the deploy user before installing
+# to /etc/systemd/system/ - no distro-default username is hardcoded here.
+User=__USER__
+Group=__USER__
+Environment=HOME=/home/__USER__
+ExecStart=/opt/passvault/backup.sh
+# Journal keeps the log line; failures show up in `systemctl list-timers` and `journalctl -u passvault-backup`
+Nice=10
+IOSchedulingClass=idle

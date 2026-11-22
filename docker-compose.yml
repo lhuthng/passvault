@@ -1,0 +1,37 @@
+# Vaultwarden + Cloudflare Tunnel (origin has NO open ports; TLS handled by CF edge)
+# Deploy at /opt/passvault on the server. The vault binds no host ports.
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:80/alive"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    # Run as the deploy user so the container can read the mode-600 config.yml
+    # + credentials bind-mounted from /opt/passvault/cloudflared/.
+    # PUID/PGID are appended to the server's .env by tunnel-init.sh (detected
+    # at runtime - NOT hardcoded to any distro's default uid).
+    user: "${PUID:-1000}:${PGID:-1000}"
+    # Starts only after ./tunnel-init.sh created cloudflared/config.yml + credentials.
+    # Tunnel ID + --config passed explicitly: this cloudflared build doesn't rely
+    # on the default config search path inside the container.
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run abc72154-ef33-44b7-bc12-24f88c35bedc
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - vaultwarden
+    mem_limit: 64m

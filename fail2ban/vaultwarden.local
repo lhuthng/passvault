@@ -1,0 +1,13 @@
+# /etc/fail2ban/jail.d/vaultwarden.local
+[vaultwarden]
+enabled  = true
+port     = 443
+filter   = vaultwarden
+logpath  = /opt/passvault/data/vw.log
+maxretry = 5
+findtime = 10m
+bantime  = 1h
+# Escalate for repeat offenders
+bantime.increment = true
+bantime.factor    = 4
+bantime.maxtime   = 1w

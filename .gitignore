@@ -1,0 +1,19 @@
+# Secrets and server state - NEVER commit
+.deploy.env
+.workers.env
+workers/.workers.env
+
+# Vault data and backups (live only on the server + encrypted off-site copies)
+data/
+backups/
+*.sql
+*.tar.gz
+
+# Cloned upstream repos
+workers/nodewarden/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+.env

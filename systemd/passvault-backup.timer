@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily PassVault backup at 04:00
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+# If the VM was down at 04:00, run right after boot instead of skipping.
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

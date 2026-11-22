@@ -1,0 +1,40 @@
+name: deploy-vm
+
+# Manual deploy button (Actions tab -> deploy-vm -> Run workflow).
+# Auto-deploy on push is intentionally OFF - uncomment the push block below
+# if you ever want it.
+on:
+  workflow_dispatch: {}
+  # push:
+  #   branches: [main]
+
+concurrency:
+  group: deploy-vm
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare connection config from secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$DEPLOY_HOST" || -z "$DEPLOY_USER" || -z "$SSH_PRIVATE_KEY" ]]; then
+            echo "::error::Set repo secrets: DEPLOY_HOST, DEPLOY_USER, SSH_PRIVATE_KEY (key CONTENT, never a path)"
+            exit 1
+          fi
+          # Rule: CI/CD never uses a key path - the key CONTENT goes into
+          # DEPLOY_SSH_KEY; deploy.sh writes it to a shredded temp file itself.
+          printf "DEPLOY_HOST=%s\nDEPLOY_USER=%s\nDEPLOY_SSH_KEY='%s'\n" \
+            "$DEPLOY_HOST" "$DEPLOY_USER" "$SSH_PRIVATE_KEY" > .deploy.env
+
+      - name: Deploy (rsync kit + compose up; data/ and .env are excluded, never touched)
+        env:
+          CI: "true"
+        run: ./deploy.sh
